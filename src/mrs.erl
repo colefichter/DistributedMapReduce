@@ -14,28 +14,32 @@ store(Int) ->
 
 print() ->
     global:send(?SERVER, {print}).
+
+mapreduce(Map, Reduce) ->
+    global:send(?SERVER, {mapreduce, Map, Reduce}).  
+    
 %--------------------------------------------------------------
 
 % Sample map-reduce algorithms --------------------------------
 test_count() -> %Count the number of integers stored in the system
     Map = fun(_X) -> 1  end,
     Reduce = fun(List) -> length(List) end,
-    global:send(?SERVER, {mapreduce, Map, Reduce}).
+    mapreduce(Map, Reduce).
 
 test_sum() -> %Find the sum of all the integers stored in the system
     Map = fun(X) -> X end,
     Reduce = fun lists:sum/1,
-    global:send(?SERVER, {mapreduce, Map, Reduce}).  
+    mapreduce(Map, Reduce).
 
 test_max() -> %Find the largest integer stored in the system 
     Map = fun(X) -> X end,
     Reduce = fun lists:max/1,
-    global:send(?SERVER, {mapreduce, Map, Reduce}).  
+    mapreduce(Map, Reduce).
 
 test_min() -> %Find the smallest integer stored in the system
     Map = fun(X) -> X end,
     Reduce = fun lists:min/1,
-    global:send(?SERVER, {mapreduce, Map, Reduce}).  
+    mapreduce(Map, Reduce).
 
 test_most_common() -> %Find the most common integer stored in the system, and the number of times it occurs.	   
     Map = fun(X) -> X end,
@@ -64,7 +68,7 @@ test_most_common() -> %Find the most common integer stored in the system, and th
 				     KeyValuePairs),
 		     [{most_common, MostCommon}, {count, MaxCount}]
 	     end,
-    global:send(?SERVER, {mapreduce, Map, Reduce}).  
+    mapreduce(Map, Reduce).
 %--------------------------------------------------------------
 
 %server implementation ----------------------------------------
@@ -98,7 +102,7 @@ server_loop(Workers) ->
 					  [],
 					  MapResults1),
 	    ReduceResult = ReduceFun(lists:flatten(MapResults2)),
-	    io:format("MapReduce: ~p~n", [ReduceResult]),
+	    io:format("MapReduce Result: ~p~n", [ReduceResult]),
 	    server_loop(Workers);	    
 	{store, Int} ->
 	    %For the hash, we'll just find n MOD num_workers and store on that machine.
