@@ -1,0 +1,1 @@
+erl -sname mrsslave -pa ebin -setcookie SECRET -s slave start
