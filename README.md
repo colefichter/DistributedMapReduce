@@ -1,6 +1,15 @@
 Map Reduce Server (MRS)
 =======================
 
+This project is a demonstration of how to implement a simple map-reduce system in Erlang/OTP. It's not intended to be used as a production system (indeed, it doesn't even have error handling). The purpose is purely educational.
+
+Erlang lends itself well to such a project for a number of reasons:
+* parallelism across physical machines in a cluster comes for free
+* the language is functional with higher order functions that can be passed around between processes and machines
+* actor model concurrency works very well for this sort of task
+
+Thanks to these and other benefits, the whole working system is in just two source files, currently just over 150 lines of code including comments, whitespace and a handful of ready-to-run implementations of simple map-reduce algorithms. 
+
 The source code files
 ---------------------
 
