@@ -41,7 +41,7 @@ test_min() -> %Find the smallest integer stored in the system
     Reduce = fun lists:min/1,
     mapreduce(Map, Reduce).
 
-test_most_common() -> %Find the most common integer stored in the system, and the number of times it occurs.	   
+test_most_common() -> %Find the most common integer stored in the system, and the number of times it occurs.
     Map = fun(X) -> X end,
     Reduce = fun(List) -> 
 		     KeyValuePairs = lists:foldl(
