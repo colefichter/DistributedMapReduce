@@ -44,18 +44,7 @@ test_min() -> %Find the smallest integer stored in the system
 test_most_common() -> %Find the most common integer stored in the system, and the number of times it occurs.
     Map = fun(X) -> X end,
     Reduce = fun(List) -> 
-		     KeyValuePairs = lists:foldl(
-				       fun(X, Dict) ->
-					 case dict:is_key(X, Dict) of
-					     true ->
-						 Dict1 = dict:update_counter(X, 1, Dict);
-					     false ->
-						 Dict1 = dict:store(X, 1, Dict)
-					 end,
-					 Dict1							    
-				       end,
-				       dict:new(),
-				       List),
+		     KeyValuePairs = lists:foldl(fun(X, Dict) -> dict:update_counter(X, 1, Dict) end, dict:new(), List),
 		     {MostCommon, MaxCount} = dict:fold(fun(K,V,{MostCommon, MaxCount}) ->
 					     case V > MaxCount of
 						 true ->
@@ -98,9 +87,7 @@ server_loop(Workers) ->
 	    %% Wait for N Map processes to terminate
 	    MapResults1 = collect_replies(N, dict:new()),
 	    %Group results into a single list
-	    MapResults2 = dict:fold(fun (_Key, Value, Acc0) -> [Value|Acc0] end,
-					  [],
-					  MapResults1),
+	    MapResults2 = dict:fold(fun (_Key, Value, Acc0) -> [Value|Acc0] end, [], MapResults1),
 	    ReduceResult = ReduceFun(lists:flatten(MapResults2)),
 	    io:format("MapReduce Result: ~p~n", [ReduceResult]),
 	    server_loop(Workers);	    
@@ -112,9 +99,7 @@ server_loop(Workers) ->
 	    server_loop(Workers);	    
 	{print} ->
 	    io:format("Workers: ~p~n", [Workers]),
-	    lists:foreach(fun (Pid) ->
-				  Pid ! {print}
-			  end, Workers),
+	    lists:foreach(fun (Pid) ->  Pid ! {print} end, Workers),
 	    server_loop(Workers);
 	{register, Pid} ->
 	    Id = length(Workers) + 1,
