@@ -8,7 +8,7 @@ Erlang lends itself well to such a project for a number of reasons:
 * the language is functional with higher order functions that can be passed around between processes and machines
 * actor model concurrency works very well for this sort of task
 
-Thanks to these and other benefits, the whole working system is in just two source files, currently just over 150 lines of code including comments, whitespace and a handful of ready-to-run implementations of simple map-reduce algorithms. 
+Thanks to these and other benefits, the whole working system is in just two source files, currently just over 100 lines of code including comments, and whitespace. A handful of ready-to-run implementations of simple map-reduce algorithms are also available in the "compute.erl" module. 
 
 The source code files
 ---------------------
