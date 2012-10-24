@@ -17,48 +17,6 @@ print() ->
 
 mapreduce(Map, Reduce) ->
     global:send(?SERVER, {mapreduce, Map, Reduce}).  
-    
-%--------------------------------------------------------------
-
-% Sample map-reduce algorithms --------------------------------
-test_count() -> %Count the number of integers stored in the system
-    Map = fun(_X) -> 1  end,
-    Reduce = fun(List) -> length(List) end,
-    mapreduce(Map, Reduce).
-
-test_sum() -> %Find the sum of all the integers stored in the system
-    Map = fun(X) -> X end,
-    Reduce = fun lists:sum/1,
-    mapreduce(Map, Reduce).
-
-test_max() -> %Find the largest integer stored in the system 
-    Map = fun(X) -> X end,
-    Reduce = fun lists:max/1,
-    mapreduce(Map, Reduce).
-
-test_min() -> %Find the smallest integer stored in the system
-    Map = fun(X) -> X end,
-    Reduce = fun lists:min/1,
-    mapreduce(Map, Reduce).
-
-test_most_common() -> %Find the most common integer stored in the system, and the number of times it occurs.
-    Map = fun(X) -> X end,
-    Reduce = fun(List) -> 
-		     KeyValuePairs = lists:foldl(fun(X, Dict) -> dict:update_counter(X, 1, Dict) end, dict:new(), List),
-		     {MostCommon, MaxCount} = dict:fold(fun(K,V,{MostCommon, MaxCount}) ->
-					     case V > MaxCount of
-						 true ->
-						     {K, V};
-						 false ->
-						     {MostCommon, MaxCount}
-					     end
-				     end,
-				     {-1, -99999999},
-				     KeyValuePairs),
-		     [{most_common, MostCommon}, {count, MaxCount}]
-	     end,
-    mapreduce(Map, Reduce).
-%--------------------------------------------------------------
 
 %server implementation ----------------------------------------
 start() ->
@@ -75,8 +33,8 @@ start() ->
 				 ok
 			 end
 		 end).
-% The main processing loop for the server.
-server_loop(Workers) ->
+
+server_loop(Workers) -> % The main processing loop for the server.
     receive
 	{mapreduce, MapFun, ReduceFun} ->
 	    Self = self(),
