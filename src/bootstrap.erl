@@ -7,7 +7,14 @@ start() ->
     worker:new(),
     worker:new(),
     worker:new(),
-    seed().
+    %seed().
+    mrs:store("Cole", 1),
+    mrs:store("Cole", 2),
+    mrs:store("Cole", 3),
+    mrs:store("Cameron", 49),
+    mrs:store("Cameron", 50),
+    mrs:store("Mike", 99),
+    mrs:store("Mike", 100).
 
 seed(N) ->
     Integers = lists:seq(0, N),

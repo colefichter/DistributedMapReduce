@@ -2,16 +2,18 @@
 
 -compile([export_all]).
 
-% Sample map-reduce algorithms --------------------------------
-count() -> %Count the number of integers stored in the system
-    Map = fun(_X) -> 1  end,
-    Reduce = fun(List) -> length(List) end,
-    mrs:mapreduce(Map, Reduce).
+%%Old functions for the integer mapreduce version (not working in this branch)
 
-sum() -> %Find the sum of all the integers stored in the system
-    Map = fun(X) -> X end,
-    Reduce = fun lists:sum/1,
-    mrs:mapreduce(Map, Reduce).
+% Sample map-reduce algorithms --------------------------------
+%count() -> %Count the number of integers stored in the system
+%    Map = fun(_X) -> 1  end,
+%    Reduce = fun(List) -> length(List) end,
+%    mrs:mapreduce(Map, Reduce).
+
+%sum() -> %Find the sum of all the integers stored in the system
+%    Map = fun(X) -> X end,
+%    Reduce = fun lists:sum/1,
+%    mrs:mapreduce(Map, Reduce).
 
 max() -> %Find the largest integer stored in the system 
     Map = fun(X) -> X end,
@@ -31,7 +33,7 @@ mean() ->
 						end, {0,0}, List),
 		     Sum / Count
 	     end,
-    mrs:mapreduce(Map, Reduce).		  
+    mrs:mapreduce(Map, Reduce).	
 
 most_common() -> %Find the most common integer stored in the system, and the number of times it occurs.
     Map = fun(X) -> X end,
@@ -49,4 +51,28 @@ most_common() -> %Find the most common integer stored in the system, and the num
 				     KeyValuePairs),
 		     [{most_common, MostCommon}, {count, MaxCount}]
 	     end,
+    mrs:mapreduce(Map, Reduce).
+
+
+
+%% New functions for the KeyValue mapreduce version...
+
+count() ->
+    Map = fun(_K, _V) -> {count, 1} end,
+    Reduce = fun(_K, ValueList) -> length(ValueList) end,
+    mrs:mapreduce(Map, Reduce).	     
+
+sum() ->		   
+    Map = fun(_K,V) -> {sum ,V} end,
+    Reduce = fun(_K, ValueList) -> lists:sum(ValueList) end,
+    mrs:mapreduce(Map, Reduce).
+
+groupcount() ->
+    Map = fun(K, _V) -> {K, 1} end,
+    Reduce = fun(_K, ValueList) -> length(ValueList) end,
+    mrs:mapreduce(Map, Reduce).
+				    
+groupsum() ->		     
+    Map = fun(K,V) -> {K,V} end,
+    Reduce = fun(_K, ValueList) -> lists:sum(ValueList) end,
     mrs:mapreduce(Map, Reduce).

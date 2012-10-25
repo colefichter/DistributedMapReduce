@@ -9,8 +9,8 @@
 register(Pid) ->
     global:send(?SERVER, {register, Pid}).
 
-store(Int) ->
-    global:send(?SERVER, {store, Int}).
+store(Key, Value) ->
+    global:send(?SERVER, {store, {Key, Value}}).
 
 print() ->
     global:send(?SERVER, {print}).
@@ -43,17 +43,25 @@ server_loop(Workers) -> % The main processing loop for the server.
 			  end, Workers),
 	    N = length(Workers),	    
 	    %% Wait for N Map processes to terminate
-	    MapResults1 = collect_replies(N, dict:new()),
-	    %Group results into a single list
-	    MapResults2 = dict:fold(fun (_Key, Value, Acc0) -> [Value|Acc0] end, [], MapResults1),
-	    ReduceResult = ReduceFun(lists:flatten(MapResults2)),
-	    io:format("MapReduce Result: ~p~n", [ReduceResult]),
+	    MapResults1 = collect_replies(N, []),
+%	    io:format("MR1 ~p~n", [MapResults1]),
+	    MapResults2 = lists:foldl(fun({K,V}, Acc0) -> %Aggregate values into lists by distinct key
+					      case dict:find(K, Acc0) of
+						  error ->
+						      dict:store(K, [V], Acc0);
+						  {ok, ValuesList} ->
+						      dict:store(K, [V|ValuesList], Acc0)
+					      end
+				      end, dict:new(), MapResults1),
+%	    io:format("MR12 ~p~n", [MapResults2]),	    
+	    ReduceResult = dict:map(ReduceFun, MapResults2), %Run reduce logic on each {Key, ValueList} tuple to produce {Key, ReduceResult} tuples in dict.
+%	    io:format("RR ~p~n", [ReduceResult]),	    
+	    io:format("MapReduce Result:~n    ~p~n", [dict:to_list(ReduceResult)]), %print final results as a list of {Key, ReduceOutput} tuples.
 	    server_loop(Workers);	    
-	{store, Int} ->
-	    %For the hash, we'll just find n MOD num_workers and store on that machine.
-	    Index = (Int rem length(Workers)) + 1, %lists use 1-based indexing
+	{store, {Key, Value}} ->
+	    Index = get_machine_index(Key, Workers),
 	    Worker = lists:nth(Index, Workers),
-	    Worker ! {store, Int},
+	    Worker ! {store, {Key, Value}},
 	    server_loop(Workers);	    
 	{print} ->
 	    io:format("Workers: ~p~n", [Workers]),
@@ -65,19 +73,18 @@ server_loop(Workers) -> % The main processing loop for the server.
 	    server_loop([Pid|Workers])
     end.
 
-collect_replies(0, Dict) ->
-    Dict;
-collect_replies(N, Dict) ->
+get_machine_index(Key, Workers) ->  %For the hash, we'll just find H MOD num_workers and store on that machine.
+    H = erlang:phash2(Key),
+    H rem length(Workers) + 1. %lists use 1-based indexing
+    
+collect_replies(0, List) ->
+    lists:flatten(List);
+collect_replies(N, List) ->
     receive
-	{map_result, Worker, ResultList} ->	   
-	    case dict:is_key(Worker, Dict) of
-		true ->
-		    %THIS SHOULDN'T HAPPEN
-		    io:format("THIS SHOULDN'T HAPPEN!", []);		    
-		false ->
-		    Dict1 = dict:store(Worker, ResultList, Dict),
-		    collect_replies(N-1, Dict1)
-	    end
+	{map_result, _Worker, []} ->
+	    collect_replies(N-1, List);
+	{map_result, _Worker, ResultList} ->	   
+	    collect_replies(N-1, [ResultList|List])
     end.
 	    
 
