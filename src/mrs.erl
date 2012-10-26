@@ -15,8 +15,13 @@ store(Key, Value) ->
 print() ->
     global:send(?SERVER, {print}).
 
+
 mapreduce(Map, Reduce) ->
-    global:send(?SERVER, {mapreduce, Map, Reduce}).  
+    SortPredicate = fun(X,Y) -> X =< Y  end,
+    ?MODULE:mapreduce(Map, Reduce, SortPredicate).
+
+mapreduce(Map, Reduce, SortPredicate) ->
+    global:send(?SERVER, {mapreduce, Map, Reduce, SortPredicate}).      
 
 %server implementation ----------------------------------------
 start() ->
@@ -36,10 +41,7 @@ start() ->
 
 server_loop(Workers) -> % The main processing loop for the server.
     receive
-	{mapreduce, MapFun, ReduceFun} ->
-
-%TODO: make an optional sort fun that runs as the final step, after reducing.
-
+	{mapreduce, MapFun, ReduceFun, SortPredicate} ->
 	    Self = self(),
 	    lists:foreach(fun (Pid) ->
 				  Pid ! {map, Self, MapFun}
@@ -47,8 +49,8 @@ server_loop(Workers) -> % The main processing loop for the server.
 	    N = length(Workers),	    
 	    %% Wait for N Map processes to terminate
 	    MapResults1 = collect_replies(N, []),
-%	    io:format("MR1 ~p~n", [MapResults1]),
-	    MapResults2 = lists:foldl(fun({K,V}, Acc0) -> %Aggregate values into lists by distinct key
+	    %Aggregate values into lists by distinct key
+	    MapResults2 = lists:foldl(fun({K,V}, Acc0) -> 
 					      case dict:find(K, Acc0) of
 						  error ->
 						      dict:store(K, [V], Acc0);
@@ -56,11 +58,11 @@ server_loop(Workers) -> % The main processing loop for the server.
 						      dict:store(K, [V|ValuesList], Acc0)
 					      end
 				      end, dict:new(), MapResults1),
-%	    io:format("MR12 ~p~n", [MapResults2]),	    
-	    ReduceResult = dict:map(ReduceFun, MapResults2), %Run reduce logic on each {Key, ValueList} tuple to produce {Key, ReduceResult} tuples in dict.
-%	    io:format("RR ~p~n", [ReduceResult]),
-	    SortedResults = lists:sort(fun(X,Y) -> X =< Y  end, dict:to_list(ReduceResult)),
-	    io:format("MapReduce Result:~n    ~p~n", [SortedResults]), %print final results as a list of {Key, ReduceOutput} tuples.
+	    %Run reduce logic on each {Key, ValueList} tuple to produce {Key, ReduceResult} tuples in dict.
+	    ReduceResult = dict:map(ReduceFun, MapResults2), 
+	    SortedResults = lists:sort(SortPredicate, dict:to_list(ReduceResult)),
+	    %print final results as a list of {Key, ReduceOutput} tuples.
+	    io:format("MapReduce Result:~n    ~p~n", [SortedResults]), 
 	    server_loop(Workers);	    
 	{store, {Key, Value}} ->
 	    Index = get_machine_index(Key, Workers),
@@ -77,13 +79,14 @@ server_loop(Workers) -> % The main processing loop for the server.
 	    server_loop([Pid|Workers])
     end.
 
-get_machine_index(Key, Workers) ->  %For the hash, we'll just find H MOD num_workers and store on that machine.
+get_machine_index(Key, Workers) ->  
+    %For the hash, we'll use a simple Consistent Hash Ring strategy: http://www.martinbroadhurst.com/Consistent-Hash-Ring.html
     H = erlang:phash2(Key),
     H rem length(Workers) + 1. %lists use 1-based indexing
     
 collect_replies(0, List) ->
     List1 = lists:flatten(List),
-    lists:filter(fun(X) -> X =/= nil  end, List1);
+    lists:filter(fun(X) -> X =/= nil  end, List1); %remove the nil entries...
 collect_replies(N, List) ->
     receive
 	{map_result, _Worker, []} ->
