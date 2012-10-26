@@ -7,7 +7,9 @@ start() ->
     worker:new(),
     worker:new(),
     worker:new(),
-    %seed().
+    seed().
+
+seed() ->
     mrs:store("Cole", 1),
     mrs:store("Cole", 2),
     mrs:store("Cole", 3),
@@ -20,13 +22,3 @@ start() ->
     mrs:store("MyKey", "MyValue"),
     mrs:store(tuple, {with_an, atom_for_a_key}).
 
-seed(N) ->
-    Integers = lists:seq(0, N),
-    lists:foreach(fun (I) ->
-			  mrs:store(I)
-		  end, Integers).    
-seed() ->
-    Integers = lists:seq(0, 99),
-    lists:foreach(fun (I) ->
-			  mrs:store(I)
-		  end, Integers).
