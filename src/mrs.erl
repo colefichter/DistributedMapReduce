@@ -37,6 +37,9 @@ start() ->
 server_loop(Workers) -> % The main processing loop for the server.
     receive
 	{mapreduce, MapFun, ReduceFun} ->
+
+%TODO: make an optional sort fun that runs as the final step, after reducing.
+
 	    Self = self(),
 	    lists:foreach(fun (Pid) ->
 				  Pid ! {map, Self, MapFun}
@@ -55,8 +58,9 @@ server_loop(Workers) -> % The main processing loop for the server.
 				      end, dict:new(), MapResults1),
 %	    io:format("MR12 ~p~n", [MapResults2]),	    
 	    ReduceResult = dict:map(ReduceFun, MapResults2), %Run reduce logic on each {Key, ValueList} tuple to produce {Key, ReduceResult} tuples in dict.
-%	    io:format("RR ~p~n", [ReduceResult]),	    
-	    io:format("MapReduce Result:~n    ~p~n", [dict:to_list(ReduceResult)]), %print final results as a list of {Key, ReduceOutput} tuples.
+%	    io:format("RR ~p~n", [ReduceResult]),
+	    SortedResults = lists:sort(fun(X,Y) -> X =< Y  end, dict:to_list(ReduceResult)),
+	    io:format("MapReduce Result:~n    ~p~n", [SortedResults]), %print final results as a list of {Key, ReduceOutput} tuples.
 	    server_loop(Workers);	    
 	{store, {Key, Value}} ->
 	    Index = get_machine_index(Key, Workers),
@@ -78,7 +82,8 @@ get_machine_index(Key, Workers) ->  %For the hash, we'll just find H MOD num_wor
     H rem length(Workers) + 1. %lists use 1-based indexing
     
 collect_replies(0, List) ->
-    lists:flatten(List);
+    List1 = lists:flatten(List),
+    lists:filter(fun(X) -> X =/= nil  end, List1);
 collect_replies(N, List) ->
     receive
 	{map_result, _Worker, []} ->

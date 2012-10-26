@@ -62,6 +62,7 @@ count() ->
     Reduce = fun(_K, ValueList) -> length(ValueList) end,
     mrs:mapreduce(Map, Reduce).	     
 
+%Assumes that all values in the store are numbers!
 sum() ->		   
     Map = fun(_K,V) -> {sum ,V} end,
     Reduce = fun(_K, ValueList) -> lists:sum(ValueList) end,
@@ -76,3 +77,29 @@ groupsum() ->
     Map = fun(K,V) -> {K,V} end,
     Reduce = fun(_K, ValueList) -> lists:sum(ValueList) end,
     mrs:mapreduce(Map, Reduce).
+
+find(QueryKey) ->
+    Map = fun(K,V) ->
+		  case K =:= QueryKey of
+		      true ->
+			  {K,V};
+		      false ->
+			  nil
+		  end
+	  end,
+    Reduce = fun(_K,Values) -> Values end,
+    mrs:mapreduce(Map, Reduce).
+
+findbyvalue(Query) ->
+    Map = fun(K,V) ->
+		  case V =:= Query of
+		      true ->
+			  {K,V};
+		      false ->
+			  %nil is a special atom that we will filter out of the map results.
+			  %We rely on this because erlang functions always return a value.
+			  nil
+		  end
+	  end,
+    Reduce = fun(_K, Values) -> Values end,
+    mrs:mapreduce(Map,Reduce).
