@@ -16,7 +16,7 @@ server_loop(Numbers) ->
 	    From ! {map_result, self(), ResultList},
 	    server_loop(Numbers);
 	{store, Int} ->
-	    io:format("Storing ~p~n", [Int]),
+	    %io:format("Storing ~p~n", [Int]),
 	    server_loop([Int|Numbers]);
 	{reset} ->
 	    server_loop([]);
