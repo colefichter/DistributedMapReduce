@@ -15,6 +15,9 @@ store(Int) ->
 print() ->
     global:send(?SERVER, {print}).
 
+reset() ->
+    global:send(?SERVER, {reset}).
+
 mapreduce(Map, Reduce) ->
     global:send(?SERVER, {mapreduce, Map, Reduce}).  
 
@@ -62,7 +65,10 @@ server_loop(Workers) -> % The main processing loop for the server.
 	{register, Pid} ->
 	    Id = length(Workers) + 1,
 	    io:format("Registering worker ~p (~p).~n", [Id, Pid]),
-	    server_loop([Pid|Workers])
+	    server_loop([Pid|Workers]);
+	{reset} ->
+	    lists:foreach(fun(Pid) -> Pid ! {reset} end, Workers),
+	    server_loop(Workers)
     end.
 
 collect_replies(0, Dict) ->
