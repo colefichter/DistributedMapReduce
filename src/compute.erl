@@ -50,7 +50,7 @@ median() ->
 	     end,
      mrs:mapreduce(Map, Reduce).
 
-most_common() -> %Find the most common integer stored in the system, and the number of times it occurs.
+mode() -> %Find the most common integer stored in the system, and the number of times it occurs.
     Map = fun(X) -> X end,
     Reduce = fun(List) -> 
 		     KeyValuePairs = lists:foldl(fun(X, Dict) -> dict:update_counter(X, 1, Dict) end, dict:new(), List),

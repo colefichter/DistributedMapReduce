@@ -19,7 +19,14 @@ reset() ->
     global:send(?SERVER, {reset}).
 
 mapreduce(Map, Reduce) ->
-    global:send(?SERVER, {mapreduce, Map, Reduce}).  
+    global:send(?SERVER, {mapreduce, self(), Map, Reduce}),
+    receive
+    	{result, _From, ReduceResult} ->
+    		ReduceResult
+	end.	
+
+rebalance() ->
+	global:send(?SERVER, {rebalance}).
 
 %server implementation ----------------------------------------
 start() ->
@@ -39,7 +46,7 @@ start() ->
 
 server_loop(Workers) -> % The main processing loop for the server.
     receive
-	{mapreduce, MapFun, ReduceFun} ->
+	{mapreduce, From, MapFun, ReduceFun} ->
 	    Self = self(),
 	    lists:foreach(fun (Pid) ->
 				  Pid ! {map, Self, MapFun}
@@ -50,14 +57,28 @@ server_loop(Workers) -> % The main processing loop for the server.
 	    %Group results into a single list
 	    MapResults2 = dict:fold(fun (_Key, Value, Acc0) -> [Value|Acc0] end, [], MapResults1),
 	    ReduceResult = ReduceFun(lists:flatten(MapResults2)),
-	    io:format("MapReduce Result: ~p~n", [ReduceResult]),
+	    io:format("Sending MapReduce Result: ~p~n", [ReduceResult]),
+	    From ! {result, self(), ReduceResult},
 	    server_loop(Workers);	    
 	{store, Int} ->
 	    %For the hash, we'll just find n MOD num_workers and store on that machine.
 	    Index = (Int rem length(Workers)) + 1, %lists use 1-based indexing
 	    Worker = lists:nth(Index, Workers),
 	    Worker ! {store, Int},
-	    server_loop(Workers);	    
+	    server_loop(Workers);	  
+	{rebalance} ->
+		io:format("Rebalancing Data...~n"),
+		NumWorkers = length(Workers),
+		From = self(),
+		_unused = lists:foldl(fun(Worker, Index) ->
+				Worker ! {rebalance, From, NumWorkers, Index},
+				receive
+					{purged_data, Items} ->
+						lists:foreach(fun mrs:store/1, Items)
+				end,
+				Index + 1
+			end, 0, Workers),
+		server_loop(Workers);
 	{print} ->
 	    io:format("Workers: ~p~n", [Workers]),
 	    lists:foreach(fun (Pid) ->  Pid ! {print} end, Workers),
@@ -65,6 +86,7 @@ server_loop(Workers) -> % The main processing loop for the server.
 	{register, Pid} ->
 	    Id = length(Workers) + 1,
 	    io:format("Registering worker ~p (~p).~n", [Id, Pid]),
+	    mrs:rebalance(),	    
 	    server_loop([Pid|Workers]);
 	{reset} ->
 	    lists:foreach(fun(Pid) -> Pid ! {reset} end, Workers),
@@ -85,6 +107,3 @@ collect_replies(N, Dict) ->
 		    collect_replies(N-1, Dict1)
 	    end
     end.
-	    
-
-    
