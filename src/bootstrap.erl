@@ -15,7 +15,4 @@ seed(N) ->
 			  mrs:store(I)
 		  end, Integers).    
 seed() ->
-    Integers = lists:seq(0, 99),
-    lists:foreach(fun (I) ->
-			  mrs:store(I)
-		  end, Integers).
+    seed(99).
