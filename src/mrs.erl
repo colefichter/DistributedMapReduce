@@ -35,12 +35,11 @@ start() ->
 		 fun() ->
 			 case global:whereis_name(?SERVER) of
 			     undefined ->
-				 FirstWorker = spawn(worker, server_loop, [[]]),
-				 Workers = [FirstWorker],
-				 Pid = spawn(?MODULE, server_loop, [Workers]),
-				 global:register_name(?SERVER, Pid);
+					 Workers = [],
+					 Pid = spawn(?MODULE, server_loop, [Workers]),
+					 global:register_name(?SERVER, Pid);
 			     _ ->
-				 ok
+				 	ok
 			 end
 		 end).
 
