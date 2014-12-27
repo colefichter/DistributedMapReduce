@@ -11,7 +11,6 @@ server_loop(Numbers) ->
     receive
 	{map, From, Fun} ->
 	    io:format("Mapping (~p)~n", [self()]),
-	    %entries in this list have the format: {Key, Value}
 	    ResultList = lists:map(Fun, Numbers),
 	    From ! {map_result, self(), ResultList},
 	    server_loop(Numbers);
