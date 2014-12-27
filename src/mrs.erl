@@ -7,41 +7,32 @@
 
 %client API ----------------------------------------------------
 register(Pid) ->
-    global:send(?SERVER, {register, Pid}).
+    ?SERVER ! {register, Pid}.
 
 store(Int) ->
-    global:send(?SERVER, {store, Int}).
+    ?SERVER ! {store, Int}.
 
 print() ->
-    global:send(?SERVER, {print}).
+    ?SERVER ! {print}.
 
 reset() ->
-    global:send(?SERVER, {reset}).
+    ?SERVER ! {reset}.
 
 mapreduce(Map, Reduce) ->
-    global:send(?SERVER, {mapreduce, self(), Map, Reduce}),
+    ?SERVER ! {mapreduce, self(), Map, Reduce},
     receive
     	{result, _From, ReduceResult} ->
     		ReduceResult
 	end.	
 
 rebalance() ->
-	global:send(?SERVER, {rebalance}).
+	?SERVER ! {rebalance}.
 
 %server implementation ----------------------------------------
 start() ->
-    %register the server process globally, across the entire cluster.
-    global:trans({?SERVER, ?SERVER},
-		 fun() ->
-			 case global:whereis_name(?SERVER) of
-			     undefined ->
-					 Workers = [],
-					 Pid = spawn(?MODULE, server_loop, [Workers]),
-					 global:register_name(?SERVER, Pid);
-			     _ ->
-				 	ok
-			 end
-		 end).
+	Workers = [],
+	Pid = spawn(?MODULE, server_loop, [Workers]),
+	register(?SERVER, Pid).
 
 server_loop(Workers) -> % The main processing loop for the server.
     receive
