@@ -22,9 +22,4 @@ There are currently four files in the /src folder:
 Single Node operation
 ---------------------
 
-Simply run "start_server.bat" from the command line. This will start an Erlang session and launch the mapreduce server with a few workers and some seed data. To inspect the data and workers, call mrs:print/0. Run the sample mapreduce algorithms by calling the methods in the compute module, for example compute:sum/0.
-
-Multi-node operation
---------------------
-
-TODO: Write this...
+Simply run `start_server.bat` (or .sh) from the command line. This will start an Erlang session and launch the mapreduce server with a few workers and some seed data. To inspect the data and workers, call `mrs:print/0`. Run the sample mapreduce algorithms by calling the methods in the compute module, for example `compute:sum/0`.
