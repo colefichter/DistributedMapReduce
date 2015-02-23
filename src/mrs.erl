@@ -30,9 +30,9 @@ rebalance() ->
 
 %server implementation ----------------------------------------
 start() ->
-	Workers = [],
-	Pid = spawn(?MODULE, server_loop, [Workers]),
-	register(?SERVER, Pid).
+    Workers = [],
+    Pid = spawn(?MODULE, server_loop, [Workers]),
+    register(?SERVER, Pid).
 
 server_loop(Workers) -> % The main processing loop for the server.
     receive
@@ -51,16 +51,16 @@ server_loop(Workers) -> % The main processing loop for the server.
 	    From ! {result, self(), ReduceResult},
 	    server_loop(Workers);	    
 	{store, Int} ->
-	    %For the hash, we'll just find n MOD num_workers and store on that machine.
+	    %For the hash, we will just find n MOD num_workers and store on that machine.
 	    Index = (Int rem length(Workers)) + 1, %lists use 1-based indexing
 	    Worker = lists:nth(Index, Workers),
 	    Worker ! {store, Int},
 	    server_loop(Workers);	  
 	{rebalance} ->
-		io:format("Rebalancing Data...~n"),
-		NumWorkers = length(Workers),
-		From = self(),
-		_unused = lists:foldl(fun(Worker, Index) ->
+	    io:format("Rebalancing Data...~n"),
+	    NumWorkers = length(Workers),
+	    From = self(),
+	    _unused = lists:foldl(fun(Worker, Index) ->
 				Worker ! {rebalance, From, NumWorkers, Index},
 				receive
 					{purged_data, Items} ->
@@ -68,7 +68,7 @@ server_loop(Workers) -> % The main processing loop for the server.
 				end,
 				Index + 1
 			end, 0, Workers),
-		server_loop(Workers);
+	    server_loop(Workers);
 	{print} ->
 	    io:format("Workers: ~p~n", [Workers]),
 	    lists:foreach(fun (Pid) ->  Pid ! {print} end, Workers),
