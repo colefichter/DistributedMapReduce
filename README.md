@@ -1,6 +1,8 @@
 Map Reduce Server (MRS)
 =======================
 
+A tutorial for this project can be found at [http://erlang-tutorials.colefichter.ca/mapreduce1.html](http://erlang-tutorials.colefichter.ca/mapreduce1.html).
+
 This project is a demonstration of how to implement a simple map-reduce system in Erlang/OTP. It's not intended to be used as a production system (indeed, it doesn't even have error handling). The purpose is purely educational.
 
 Erlang lends itself well to such a project for a number of reasons:
